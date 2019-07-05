@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
@@ -25,6 +24,11 @@
             <version>1.5.20.RELEASE</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>DynamoDBLocal</artifactId>
+            <version>[1.11,2.0)</version>
+        </dependency>
     </dependencies>
 
     <profiles>
@@ -32,6 +36,46 @@
             <id>integration-test</id>
             <build>
                 <plugins>
+                    <!-- This plugin creates dynamodb local -->
+                    <plugin>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>prepare-it-database</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>start</goal>
+                                </goals>
+                                <configuration>
+                                    <images>
+                                        <image>
+                                            <name>artifactory.cloud.capitalone.com/uksvc4/dynamodb-local</name>
+                                            <alias>it-crdb-dynamoDB</alias>
+                                            <run>
+                                                <ports>
+                                                    <port>${port.dynamodb-local}:8000</port>
+                                                </ports>
+                                                <wait>
+                                                    <http>
+                                                        <url>http://localhost:${port.dynamodb-local}/shell</url>
+                                                    </http>
+                                                    <time>5000</time>
+                                                </wait>
+                                            </run>
+                                        </image>
+                                    </images>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>remove-it-database</id>
+                                <phase>post-integration-test</phase>
+                                <goals>
+                                    <goal>stop</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-failsafe-plugin</artifactId>
@@ -43,6 +87,11 @@
                                 </goals>
                             </execution>
                         </executions>
+                        <configuration>
+                            <argLine>
+                                -DapplicationBaseUrl=http://localhost:${port.lambda-harness} -DdynamoDbLocalPort=${port.dynamodb-local} -Dspring.profiles.active=component-tests
+                            </argLine>
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>
@@ -53,10 +102,42 @@
 
     <build>
         <plugins>
+            <!-- this plugin reserves network port and dynamo port -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>1.9.1</version>
+                <executions>
+                    <execution>
+                        <id>reserve-ports</id>
+                        <goals>
+                            <goal>reserve-network-port</goal>
+                        </goals>
+                        <phase>initialize</phase>
+                        <configuration>
+                            <portNames>
+                                <portName>port.lambda-harness</portName>
+                                <portName>port.dynamodb-local</portName>
+                            </portNames>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
         </plugins>
     </build>
+
+    <!--Custom repository:-->
+    <repositories>
+        <repository>
+            <id>dynamodb-local-oregon</id>
+            <name>DynamoDB Local Release Repository</name>
+            <url>https://s3-us-west-2.amazonaws.com/dynamodb-local/release</url>
+        </repository>
+    </repositories>
+
+
 </project>
