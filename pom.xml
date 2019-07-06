@@ -24,11 +24,19 @@
             <version>1.5.20.RELEASE</version>
             <scope>test</scope>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/org.codehaus.mojo/exec-maven-plugin -->
+        <dependency>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>1.6.0</version>
+        </dependency>
+        <!--
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>DynamoDBLocal</artifactId>
             <version>[1.11,2.0)</version>
         </dependency>
+        -->
     </dependencies>
 
     <profiles>
@@ -36,37 +44,38 @@
             <id>integration-test</id>
             <build>
                 <plugins>
-                    <!-- This plugin creates dynamodb local -->
+                    <!-- TODO add a plugin to unzip dyamodb_local_latest.zip into a temp directory
+                         and let the following plugin to use, stop and delete this temp directory
+                    -->
+
+
+                    <!-- This plugin start dynamodb local -->
                     <plugin>
-                        <groupId>io.fabric8</groupId>
-                        <artifactId>docker-maven-plugin</artifactId>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>1.6.0</version>
                         <executions>
                             <execution>
                                 <id>prepare-it-database</id>
                                 <phase>pre-integration-test</phase>
                                 <goals>
-                                    <goal>start</goal>
+                                    <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <images>
-                                        <image>
-                                            <name>artifactory.cloud.capitalone.com/uksvc4/dynamodb-local</name>
-                                            <alias>it-crdb-dynamoDB</alias>
-                                            <run>
-                                                <ports>
-                                                    <port>${port.dynamodb-local}:8000</port>
-                                                </ports>
-                                                <wait>
-                                                    <http>
-                                                        <url>http://localhost:${port.dynamodb-local}/shell</url>
-                                                    </http>
-                                                    <time>5000</time>
-                                                </wait>
-                                            </run>
-                                        </image>
-                                    </images>
+                                    <executable>java</executable>
+                                    <arguments>
+                                        <argument>-Djava.library.path=${project.basedir}/src/lib/DynamoDBLocal_lib</argument>
+                                        <argument>-jar</argument>
+                                        <argument>${project.basedir}/src/lib/DynamoDBLocal.jar</argument>
+                                        <argument>-sharedDb</argument>
+                                    </arguments>
+                                    <!--
+                                    <async>true</async>
+                                    <asyncDestroyOnShutdown>true</asyncDestroyOnShutdown>
+                                    -->
                                 </configuration>
                             </execution>
+                            <!--
                             <execution>
                                 <id>remove-it-database</id>
                                 <phase>post-integration-test</phase>
@@ -74,6 +83,7 @@
                                     <goal>stop</goal>
                                 </goals>
                             </execution>
+                            -->
                         </executions>
                     </plugin>
                     <plugin>
@@ -131,6 +141,7 @@
     </build>
 
     <!--Custom repository:-->
+    <!--
     <repositories>
         <repository>
             <id>dynamodb-local-oregon</id>
@@ -138,6 +149,7 @@
             <url>https://s3-us-west-2.amazonaws.com/dynamodb-local/release</url>
         </repository>
     </repositories>
+    -->
 
 
 </project>
