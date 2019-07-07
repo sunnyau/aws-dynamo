@@ -44,11 +44,6 @@
             <id>integration-test</id>
             <build>
                 <plugins>
-                    <!-- TODO add a plugin to unzip dyamodb_local_latest.zip into a temp directory
-                         and let the following plugin to use, stop and delete this temp directory
-                    -->
-
-
                     <!-- This plugin start dynamodb local -->
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
@@ -64,15 +59,12 @@
                                 <configuration>
                                     <executable>java</executable>
                                     <arguments>
-                                        <argument>-Djava.library.path=${project.basedir}/src/lib/DynamoDBLocal_lib</argument>
+                                        <argument>-Djava.library.path=${project.basedir}/tmp/DynamoDBLocal_lib</argument>
                                         <argument>-jar</argument>
-                                        <argument>${project.basedir}/src/lib/DynamoDBLocal.jar</argument>
+                                        <argument>${project.basedir}/tmp/DynamoDBLocal.jar</argument>
                                         <argument>-sharedDb</argument>
                                     </arguments>
-                                    <!--
                                     <async>true</async>
-                                    <asyncDestroyOnShutdown>true</asyncDestroyOnShutdown>
-                                    -->
                                 </configuration>
                             </execution>
                             <!--

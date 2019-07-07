@@ -1,4 +1,5 @@
 target/**
 .idea/
+/tmp
 shared-local-instance.db
 
